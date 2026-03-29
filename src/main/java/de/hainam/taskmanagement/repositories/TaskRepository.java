@@ -1,4 +1,4 @@
-package de.hainam.taskmanagement.repository;
+package de.hainam.taskmanagement.repositories;
 
 import de.hainam.taskmanagement.entities.Task;
 import org.springframework.data.jpa.repository.JpaRepository;

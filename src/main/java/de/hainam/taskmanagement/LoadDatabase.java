@@ -1,7 +1,7 @@
 package de.hainam.taskmanagement;
 
 import de.hainam.taskmanagement.entities.Task;
-import de.hainam.taskmanagement.repository.TaskRepository;
+import de.hainam.taskmanagement.repositories.TaskRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;

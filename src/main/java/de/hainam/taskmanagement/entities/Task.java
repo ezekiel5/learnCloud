@@ -33,6 +33,14 @@ public class Task {
         return status;
     }
 
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
     @Override
     public String toString() {
         return "Task{" +
