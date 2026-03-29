@@ -1,0 +1,268 @@
+﻿===== C:\Users\User\Documents\project\learnCloud\src\main\java\de\hainam\taskmanagement\LoadDatabase.java =====
+package de.hainam.taskmanagement;
+
+import de.hainam.taskmanagement.entities.Task;
+import de.hainam.taskmanagement.repositories.TaskRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class LoadDatabase {
+    private static final Logger log = LoggerFactory.getLogger(LoadDatabase.class);
+
+    @Bean
+    CommandLineRunner initDatabase(TaskRepository taskRepository) {
+
+        return args -> {
+            taskRepository.save(new Task("Test task"));
+
+            taskRepository.findAll().forEach(task -> log.info("Preloaded " + task));
+        };
+    }
+}
+===== C:\Users\User\Documents\project\learnCloud\src\main\java\de\hainam\taskmanagement\TaskmanagementApplication.java =====
+package de.hainam.taskmanagement;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class TaskmanagementApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(TaskmanagementApplication.class, args);
+	}
+
+}
+===== C:\Users\User\Documents\project\learnCloud\src\main\java\de\hainam\taskmanagement\controller\TaskController.java =====
+package de.hainam.taskmanagement.controller;
+
+import de.hainam.taskmanagement.entities.Task;
+import de.hainam.taskmanagement.services.TaskService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+public class TaskController {
+    private final TaskService taskService;
+
+    public TaskController(final TaskService taskService) {
+        this.taskService = taskService;
+    }
+
+    @GetMapping("/tasks")
+    public List<Task> getAllTask() {
+        return this.taskService.getAllTasks();
+    }
+
+    @PostMapping("/tasks")
+    public ResponseEntity<Task> createTask(@RequestBody final Task task) {
+        Task created = taskService.createTask(task);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @GetMapping("/tasks/{id}")
+    public Task getTaskById(@PathVariable Long id) {
+        return this.taskService.getTaskById(id);
+    }
+
+    @PutMapping("/tasks/{id}")
+    public Task updateTask(@PathVariable Long id, @RequestBody final Task task) {
+        return this.taskService.updateTask(id, task);
+    }
+
+    @DeleteMapping("/tasks/{id}")
+    public Task deleteTask(@PathVariable Long id) {
+        return this.taskService.deleteTask(id);
+    }
+}
+===== C:\Users\User\Documents\project\learnCloud\src\main\java\de\hainam\taskmanagement\controller\advices\GlobalExceptionHandler.java =====
+package de.hainam.taskmanagement.controller.advices;
+
+import de.hainam.taskmanagement.entities.exceptions.TaskEmptyTitleException;
+import de.hainam.taskmanagement.entities.exceptions.TaskNotFoundException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(TaskNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public String handleNotFound(TaskNotFoundException ex) {
+        return ex.getMessage();
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String handleBadRequest(IllegalArgumentException ex) {
+        return ex.getMessage();
+    }
+
+    @ExceptionHandler(TaskEmptyTitleException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    public String handleNotAcceptable(TaskEmptyTitleException ex) {
+        return ex.getMessage();
+    }
+}
+===== C:\Users\User\Documents\project\learnCloud\src\main\java\de\hainam\taskmanagement\entities\Task.java =====
+package de.hainam.taskmanagement.entities;
+
+import de.hainam.taskmanagement.entities.enums.Status;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+
+@Entity
+public class Task {
+    @Id
+    @GeneratedValue
+    private Long id;
+    private String title;
+    @Enumerated(EnumType.STRING)
+    private Status status;
+
+    public Task() {
+        // Need for springboot
+    }
+
+    public Task(String title) {
+        this.title = title;
+        this.status = Status.TODO;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    @Override
+    public String toString() {
+        return "Task{" +
+                "id=" + id +
+                ", title='" + title + '\'' +
+                ", status=" + status +
+                '}';
+    }
+}
+===== C:\Users\User\Documents\project\learnCloud\src\main\java\de\hainam\taskmanagement\entities\enums\Status.java =====
+package de.hainam.taskmanagement.entities.enums;
+
+public enum Status {
+    TODO
+}
+===== C:\Users\User\Documents\project\learnCloud\src\main\java\de\hainam\taskmanagement\entities\exceptions\TaskEmptyTitleException.java =====
+package de.hainam.taskmanagement.entities.exceptions;
+
+public class TaskEmptyTitleException extends RuntimeException {
+    public TaskEmptyTitleException(final String exception) {
+        super(exception);
+    }
+}
+===== C:\Users\User\Documents\project\learnCloud\src\main\java\de\hainam\taskmanagement\entities\exceptions\TaskNotFoundException.java =====
+package de.hainam.taskmanagement.entities.exceptions;
+
+public class TaskNotFoundException extends RuntimeException {
+    public TaskNotFoundException(final String exception) {
+        super(exception);
+    }
+}
+===== C:\Users\User\Documents\project\learnCloud\src\main\java\de\hainam\taskmanagement\repositories\TaskRepository.java =====
+package de.hainam.taskmanagement.repositories;
+
+import de.hainam.taskmanagement.entities.Task;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface TaskRepository extends JpaRepository<Task, Long> {
+}
+===== C:\Users\User\Documents\project\learnCloud\src\main\java\de\hainam\taskmanagement\services\TaskService.java =====
+package de.hainam.taskmanagement.services;
+
+import de.hainam.taskmanagement.entities.Task;
+import de.hainam.taskmanagement.entities.enums.Status;
+import de.hainam.taskmanagement.entities.exceptions.TaskEmptyTitleException;
+import de.hainam.taskmanagement.entities.exceptions.TaskNotFoundException;
+import de.hainam.taskmanagement.repositories.TaskRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class TaskService {
+
+    private final TaskRepository taskRepository;
+
+    public TaskService(TaskRepository taskRepository) {
+        this.taskRepository = taskRepository;
+    }
+
+    public List<Task> getAllTasks() {
+        return this.taskRepository.findAll();
+    }
+
+    public Task createTask(final Task task) {
+        if (task.getTitle() == null || task.getTitle().isBlank()) {
+            throw new TaskEmptyTitleException("Fail create task: Title cannot be empty");
+        }
+
+        task.setStatus(Status.TODO);
+        return this.taskRepository.save(task);
+    }
+
+    public Task getTaskById(Long id) {
+        return this.taskRepository.findById(id)
+                .orElseThrow(() -> new TaskNotFoundException("Task not found: " + id));
+    }
+
+    public Task updateTask(final Long id, final Task task) {
+        final Task existing = getTaskById(id);
+        existing.setTitle(task.getTitle());
+        // status need set by rest and not from here
+        return taskRepository.save(existing);
+    }
+
+    public Task deleteTask(final Long id) {
+        final Task existing = getTaskById(id);
+        taskRepository.delete(existing);
+        return existing;
+    }
+}
+===== C:\Users\User\Documents\project\learnCloud\src\test\java\de\hainam\taskmanagement\TaskmanagementApplicationTests.java =====
+package de.hainam.taskmanagement;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class TaskmanagementApplicationTests {
+
+	@Test
+	void contextLoads() {
+	}
+
+}

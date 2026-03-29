@@ -39,13 +39,16 @@ public class TaskService {
     public Task updateTask(final Long id, final Task task) {
         final Task existing = getTaskById(id);
         existing.setTitle(task.getTitle());
-        // status need set by rest and not from here
-        return taskRepository.save(existing);
+
+        if (task.getStatus() != null) {
+            existing.setStatus(task.getStatus());
+        }
+
+        return this.taskRepository.save(existing);
     }
 
-    public Task deleteTask(final Long id) {
+    public void deleteTask(final Long id) {
         final Task existing = getTaskById(id);
-        taskRepository.delete(existing);
-        return existing;
+        this.taskRepository.delete(existing);
     }
 }
