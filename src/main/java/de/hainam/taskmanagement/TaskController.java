@@ -3,6 +3,8 @@ package de.hainam.taskmanagement;
 import de.hainam.taskmanagement.entities.Task;
 import de.hainam.taskmanagement.repositories.TaskRepository;
 import de.hainam.taskmanagement.services.TaskService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,8 +23,9 @@ public class TaskController {
     }
 
     @PostMapping("/tasks")
-    public Task addTask(@RequestBody final Task task) {
-        return this.taskService.createTask(task);
+    public ResponseEntity<Task> addTask(@RequestBody Task task) {
+        Task created = taskService.createTask(task);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @GetMapping("/tasks/{id}")
